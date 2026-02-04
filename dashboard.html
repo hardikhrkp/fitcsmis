@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Mentor Dashboard</title>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f4f7fb;
+    margin:0;
+}
+
+.header{
+    background:#2b7cff;
+    color:white;
+    padding:18px;
+    font-size:20px;
+}
+
+.container{
+    padding:20px;
+}
+
+.search{
+    width:300px;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ddd;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    margin-top:20px;
+}
+
+th,td{
+    padding:12px;
+    border-bottom:1px solid #eee;
+    text-align:left;
+}
+
+tr:hover{
+    background:#f1f6ff;
+    cursor:pointer;
+}
+
+/* popup */
+
+.popup{
+    position:fixed;
+    top:0;
+    left:0;
+    height:100%;
+    width:100%;
+    background:rgba(0,0,0,.5);
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
+
+.card{
+    background:white;
+    padding:25px;
+    border-radius:12px;
+    width:350px;
+}
+
+.close{
+    float:right;
+    cursor:pointer;
+    font-size:18px;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="header">
+Mentor Dashboard
+</div>
+
+
+<div class="container">
+
+<input 
+    class="search"
+    id="search"
+    placeholder="Search by name or enrollment..."
+    onkeyup="filterStudents()"
+/>
+
+<table id="studentTable">
+<thead>
+<tr>
+<th>Enrollment</th>
+<th>Name</th>
+<th>Semester</th>
+<th>Division</th>
+<th>Program</th>
+</tr>
+</thead>
+
+<tbody></tbody>
+</table>
+
+</div>
+
+
+<!-- PROFILE POPUP -->
+
+<div class="popup" id="popup">
+<div class="card">
+
+<span class="close" onclick="closePopup()">✖</span>
+
+<h3>Student Profile</h3>
+
+<div id="profileData"></div>
+
+</div>
+</div>
+
+
+
+<script>
+
+const API_URL = "YOUR_WEB_APP_URL";
+
+
+// 🔐 BLOCK DIRECT ACCESS
+if(!sessionStorage.getItem("mentorMIS")){
+    window.location="index.html";
+}
+
+let students = [];
+
+
+// 🚀 LOAD DASHBOARD
+async function loadStudents(){
+
+    const mentorMIS = sessionStorage.getItem("mentorMIS");
+
+    const res = await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify({
+            action:"getStudents",
+            mentorMIS
+        })
+    });
+
+    const data = await res.json();
+
+    students = data.students;
+
+    renderTable(students);
+}
+
+
+
+function renderTable(list){
+
+    const tbody = document.querySelector("#studentTable tbody");
+
+    tbody.innerHTML="";
+
+    list.forEach(s=>{
+
+        tbody.innerHTML += `
+        <tr onclick="openProfile('${s.enrollment}')">
+            <td>${s.enrollment}</td>
+            <td>${s.name}</td>
+            <td>${s.semester}</td>
+            <td>${s.division}</td>
+            <td>${s.program || ""}</td>
+        </tr>`;
+    });
+}
+
+
+// 🔍 LIVE SEARCH
+function filterStudents(){
+
+    const keyword = document
+        .getElementById("search")
+        .value
+        .toLowerCase();
+
+    const filtered = students.filter(s=>
+        s.name.toLowerCase().includes(keyword) ||
+        s.enrollment.toLowerCase().includes(keyword)
+    );
+
+    renderTable(filtered);
+}
+
+
+
+// 👇 OPEN PROFILE
+async function openProfile(enrollment){
+
+    const res = await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify({
+            action:"getStudentProfile",
+            enrollment
+        })
+    });
+
+    const data = await res.json();
+    const p = data.profile;
+
+    document.getElementById("profileData").innerHTML = `
+        <b>Phone:</b> ${p.phone1 || "-"} <br><br>
+        <b>Alt Phone:</b> ${p.phone2 || "-"} <br><br>
+        <b>Father:</b> ${p.father || "-"} <br><br>
+        <b>Mother:</b> ${p.mother || "-"} <br><br>
+        <b>Email:</b> ${p.email || "-"} <br><br>
+        <b>Alt Email:</b> ${p.altEmail || "-"} <br><br>
+        <b>Gender:</b> ${p.gender || "-"}
+    `;
+
+    document.getElementById("popup").style.display="flex";
+}
+
+
+function closePopup(){
+    document.getElementById("popup").style.display="none";
+}
+
+
+
+// LOAD ON START
+loadStudents();
+
+</script>
+
+</body>
+</html>
