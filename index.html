@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Mentor Login</title>
+
+<style>
+
+body{
+    font-family: Arial;
+    background:#f2f5f9;
+    display:flex;
+    height:100vh;
+    justify-content:center;
+    align-items:center;
+}
+
+.card{
+    background:white;
+    padding:30px;
+    width:320px;
+    border-radius:12px;
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+}
+
+h2{
+    text-align:center;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border-radius:8px;
+    border:1px solid #ddd;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin-top:15px;
+    border:none;
+    border-radius:8px;
+    background:#2b7cff;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1f5ed6;
+}
+
+#error{
+    color:red;
+    margin-top:10px;
+    text-align:center;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="card">
+
+<h2>Mentor Login</h2>
+
+<input id="username" placeholder="MIS ID">
+
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<div id="error"></div>
+
+</div>
+
+
+
+<script>
+
+const API_URL = "PASTE_YOUR_WEB_APP_URL";
+
+async function login(){
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    document.getElementById("error").innerText = "Checking...";
+
+    try{
+
+        const res = await fetch(API_URL,{
+            method:"POST",
+            body:JSON.stringify({
+                action:"login",
+                username,
+                password
+            })
+        });
+
+        const data = await res.json();
+
+        if(!data.success){
+            document.getElementById("error").innerText = data.message;
+            return;
+        }
+
+        // ✅ Save session
+        sessionStorage.setItem("mentorMIS", data.linkedID);
+        sessionStorage.setItem("role", data.role);
+
+        // 🔥 Force password change
+        if(data.mustChangePassword){
+            window.location="change-password.html";
+        }
+        else{
+            window.location="dashboard.html";
+        }
+
+    }catch(err){
+        document.getElementById("error").innerText="Server error";
+    }
+
+}
+
+</script>
+
+</body>
+</html>
